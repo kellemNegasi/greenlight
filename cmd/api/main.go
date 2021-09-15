@@ -30,7 +30,7 @@ func main(){
 	
 	flag.IntVar(&cfg.port, "port", 4000, "API server port ")
 	flag.StringVar(&cfg.env,"env","development","Environment (development|staging|production")
-	flag.StringVar(&cfg.db.dsn,"db-dsn","postgres://greenlight:pa55word@localhost/greenlight","PostgressSQL DSN")
+	flag.StringVar(&cfg.db.dsn,"db-dsn",os.Getenv("GREENLIGHT_DB_DSN"),"PostgressSQL DSN")
 
 	flag.Parse()
 	logger:= log.New(os.Stdout,"",log.Ldate|log.Ltime)
