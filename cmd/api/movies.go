@@ -1,9 +1,9 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/kellemNegasi/greenlight/internal/data"
 	"github.com/kellemNegasi/greenlight/internal/validator"
@@ -21,20 +21,33 @@ func (app *application) createMovieHandler(w http.ResponseWriter,r *http.Request
 		app.badRequestResponse(w,r,err)
 		return
 	}
-	v:=validator.New()
 	movie:=&data.Movie{
 		Title: input.Title,
 		Year: input.Year,
 		Runtime: input.Runtime,
 		Genres: input.Genres,
 	}
+	v:=validator.New()
+	// call the validator and check if the movie itme is valid
 	data.ValidateMovie(v,movie)
 	
 	if !v.Valid(){
 		app.faildValidationResoponse(w,r,v.Errors)
 		return
 	}
-	fmt.Fprintf(w,"%+v\n",input)
+
+	err = app.models.Movies.Insert(movie)
+
+	if err!=nil{
+		app.serveErrorResponse(w,r,err)
+		return
+	}
+	headers:= make(http.Header)
+	headers.Set("Location",fmt.Sprintf("/v1/movies/%d",movie.ID))
+	err = app.writeJSON(w,http.StatusCreated,envelope{"movie":movie},headers)
+	if err!=nil{
+		app.serveErrorResponse(w,r,err)
+	}
 }
 
 func (app *application) showMovieHandler(w http.ResponseWriter, r *http.Request){
@@ -43,14 +56,15 @@ func (app *application) showMovieHandler(w http.ResponseWriter, r *http.Request)
 		app.notFoundResponse(w,r)
 		return
 		}
-	movie:= data.Movie{
-		ID:id,
-		CreatedAt: time.Now(),
-		Title: "Casablanca",
-		Runtime: 102,
-		Genres: []string{"drama","romance","war"},
-		Version: 1,
-
+	movie,err:=app.models.Movies.Get(id)
+	if err!=nil{
+		switch {
+		case errors.Is(err,data.ErrRecordNotFound):
+			app.notFoundResponse(w,r)
+		default:
+			app.serveErrorResponse(w,r,err)
+		}
+		return
 	}
 	err = app.writeJSON(w,http.StatusOK,envelope{"movie":movie},nil)
 
