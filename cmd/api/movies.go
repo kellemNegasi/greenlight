@@ -135,7 +135,7 @@ func (app *application) updateMovieHandler(w http.ResponseWriter, r *http.Reques
 		}
 		return
 	}
-	
+
 	err = app.writeJSON(w,http.StatusOK,envelope{"movie":movie},nil)
 	if err!=nil{
 		app.serveErrorResponse(w,r,err)
@@ -165,4 +165,28 @@ err = app.writeJSON(w,http.StatusOK,envelope{"message":"movie successfully delet
 if err!= nil{
 	app.serveErrorResponse(w,r,err)
 }
+}
+func (app *application) listMovieHandler(w http.ResponseWriter,r *http.Request){
+	var input struct{
+		Title string
+		Genres []string
+		data.Filters
+	}
+
+	v:= validator.New()
+	//get the url.Values from the request
+	qs:= r.URL.Query()
+	input.Title = app.readString(qs,"title","")
+	input.Genres = app.readCSV(qs,"genres",[]string{})
+	input.Filters.Page = app.readInt(qs,"page",1,v)
+	input.Filters.PageSize=app.readInt(qs,"page_size",20,v)
+	input.Filters.Sort = app.readString(qs,"sort","id")
+
+	input.Filters.SortSafelist = []string{"id", "title", "year", "runtime", "-id", "-title", "-year", "-runtime"}
+	
+	if data.ValidateFilters(v,input.Filters);!v.Valid(){
+		app.faildValidationResoponse(w,r,v.Errors)
+		return
+	}
+	fmt.Fprintf(w,"%+v\n",input)
 }

@@ -6,9 +6,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/kellemNegasi/greenlight/internal/validator"
 )
 
 type envelope map[string]interface{}
@@ -75,3 +78,38 @@ func (app *application) readJSON(w http.ResponseWriter,r *http.Request,dst inter
 	}
 	return nil
 }
+func(app *application) readString(qs url.Values,key string,defaultValue string) string{
+	// get the target string using the given key
+	s:=qs.Get(key)
+
+	// if value is not given return the default value
+	if s==""{
+		return defaultValue
+	}
+	return s
+}
+
+func(app *application) readCSV(qs url.Values,key string,defaultValue []string) []string{
+	csv := qs.Get(key)
+	if csv==""{
+		return defaultValue
+	}
+	return strings.Split(csv,".")
+}
+
+func (app *application) readInt(qs url.Values,key string,defaultValue int,v *validator.Validator) int{
+	s:=qs.Get(key)
+	if s==""{
+		return defaultValue
+	}
+	// converted the string to intger
+	i,err := strconv.Atoi(s)
+	// check for error
+	if err!=nil{
+		v.AddError(key,"must be an intger value")
+		return defaultValue
+	}
+	//  return the valid converted integer
+	return i
+}
+
