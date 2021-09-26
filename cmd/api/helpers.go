@@ -94,7 +94,7 @@ func(app *application) readCSV(qs url.Values,key string,defaultValue []string) [
 	if csv==""{
 		return defaultValue
 	}
-	return strings.Split(csv,".")
+	return strings.Split(csv,",")
 }
 
 func (app *application) readInt(qs url.Values,key string,defaultValue int,v *validator.Validator) int{
