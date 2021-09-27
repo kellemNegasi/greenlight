@@ -149,10 +149,11 @@ func ValidateMovie(v *validator.Validator,movie *Movie){
 	v.Check(validator.Unique(movie.Genres),"genres","must not contain duplicate values")
 }
 
-func (m MovieModel) GetAll(title string,genres []string,filters Filters)([]*Movie,error){
+func (m MovieModel) GetAll(title string,genres []string,filters Filters)([]*Movie,Metadata,error){
 	// inialize the query
+	// update SQL query to include the window function to count the total filtered records
 	query:=fmt.Sprintf(`
-		SELECT id,created_at,title,year,runtime,genres,version
+		SELECT count(*) OVER(),id,created_at,title,year,runtime,genres,version
 		FROM movies
 		WHERE (to_tsvector('simple', title) @@ plainto_tsquery('simple', $1) OR $1 = '')
 		AND (genres@>$2 OR $2='{}')
@@ -166,15 +167,17 @@ func (m MovieModel) GetAll(title string,genres []string,filters Filters)([]*Movi
 
 	rows,err:=m.DB.QueryContext(ctx,query,args...)
 	if err!=nil{
-		return nil,err
+		return nil,Metadata{},err
 	}
 	// make sure the rows gets closed before the GetAll function returns
 	defer rows.Close()
+	totalRecords :=0
 	movies := []*Movie{}
 	// iterate through the rows and pipulate the movies slice with Movie struct
 	for rows.Next(){
 		var movie Movie
 		err:=rows.Scan(
+			&totalRecords,
 			&movie.ID,
 			&movie.CreatedAt,
 			&movie.Title,
@@ -184,13 +187,14 @@ func (m MovieModel) GetAll(title string,genres []string,filters Filters)([]*Movi
 			&movie.Version,
 		)
 		if err!=nil{
-			return nil,err
+			return nil,Metadata{},err
 		}
 		movies = append(movies, &movie)
 	}
 	if err = rows.Err();err!=nil{
-		return nil,err
+		return nil,Metadata{},err
 	}
-	return movies,nil
+	Metadata := calculateMetatdata(totalRecords,filters.Page,filters.PageSize)
+	return movies,Metadata,nil
 	
 }
