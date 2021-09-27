@@ -156,15 +156,19 @@ func (m MovieModel) GetAll(title string,genres []string,filters Filters)([]*Movi
 		FROM movies
 		WHERE (to_tsvector('simple', title) @@ plainto_tsquery('simple', $1) OR $1 = '')
 		AND (genres@>$2 OR $2='{}')
-		ORDER BY %s %s,id ASC`,filters.sortColumn(),filters.sortDirection()) // updated to include the sorting columns and its direction
+		ORDER BY %s %s,id ASC
+		LIMIT $3 OFFSET $4`,filters.sortColumn(),filters.sortDirection()) // updated to include the sorting columns and its direction
 
 	ctx,cancel := context.WithTimeout(context.Background(),3*time.Second)
 	defer cancel()
-	rows,err:=m.DB.QueryContext(ctx,query,title,pq.Array(genres))
+	// collect the values  for the place holders in the sqol queries in a new slice
+	args:= []interface{}{title,pq.Array(genres),filters.limit(),filters.offset()}
+
+	rows,err:=m.DB.QueryContext(ctx,query,args...)
 	if err!=nil{
 		return nil,err
 	}
-	// make sure the rows gets closed before the function returns
+	// make sure the rows gets closed before the GetAll function returns
 	defer rows.Close()
 	movies := []*Movie{}
 	// iterate through the rows and pipulate the movies slice with Movie struct
