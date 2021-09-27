@@ -48,16 +48,16 @@ func New(out io.Writer,minlevel Level)*Logger{
 func (l *Logger) PrintInfo(message string,properties map[string]string){
 	l.print(LevelInfo,message,properties)
 }
-func (l Logger) PrintError(err error,properties map[string]string){
+func (l *Logger) PrintError(err error,properties map[string]string){
 	l.print(LevelError,err.Error(),properties)
 }
 
-func (l Logger) PrintFatal(err error,properties map[string]string ){
+func (l *Logger) PrintFatal(err error,properties map[string]string ){
 	l.print(LevelFatal,err.Error(),properties)
 	os.Exit(1)
 }
 
-func (l Logger) print(level Level,message string,properties map[string]string) (int,error){
+func (l *Logger) print(level Level,message string,properties map[string]string) (int,error){
 	if level<l.minLevel{
 		return 0,nil
 	}
@@ -67,8 +67,8 @@ func (l Logger) print(level Level,message string,properties map[string]string) (
 		Level	   string		      `json:"level"`
 		Time	   string		      `json:"time"`
 		Message    string		      `json:"message"`
-		Properties map[string]string  `json:"properties,omitemtpy"`
-		Trace 	   string 			  `json:trace,omitempty"`
+		Properties map[string]string  `json:"properties,omitempty"`
+		Trace 	   string 			  `json:"trace,omitempty"`
 	}{
 		Level: level.String(),
 		Time:  time.Now().UTC().Format(time.RFC3339),
