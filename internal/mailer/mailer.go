@@ -66,13 +66,17 @@ func (m *Mailer) Send(recipient,templateFile string,data interface{}) error{
 	// this opens a connections to the SMTP server sends the message and closes the connection
 	// if there is a time out, "dial tcp:i/o timeout" will be  returned
 
-	err = m.dialer.DialAndSend(msg)
-	if err!=nil{
-		return err
+	// on hindsight let's make the sender try 3 times before aborting
+	for i:=3;i<3;i++{
+		err = m.dialer.DialAndSend(msg)
+		// if everythind is fine return nil
+		if err==nil{
+			return nil
+		}
+		// if didn't send try again after 500 millisecond i.e half a second
+		time.Sleep(500*time.Millisecond)
 	}
-
-	// if everything has gone as planned then return no error, i.e nil
-	return nil
+	return err
 
 }
 
