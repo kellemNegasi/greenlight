@@ -43,6 +43,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	err = app.models.Users.Insert(user)
+	
 	if err!=nil{
 		switch{
 		case errors.Is(err,data.ErrDuplicateEmail):
@@ -53,6 +54,14 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		}
 		return 
 	}
+
+	// send the email using the mailer package i.e calling the send method on the mailer object
+	err = app.mailer.Send(user.Email,"user_welcome.tmpl",user)
+	if err!=nil{
+		app.serveErrorResponse(w,r,err)
+		return
+	}
+
 
 	err = app.writeJSON(w,http.StatusCreated,envelope{"user":user},nil)
 	if err!=nil{

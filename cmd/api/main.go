@@ -9,6 +9,7 @@ import (
 
 	"github.com/kellemNegasi/greenlight/internal/data"
 	"github.com/kellemNegasi/greenlight/internal/jsonlog"
+	"github.com/kellemNegasi/greenlight/internal/mailer"
 	_ "github.com/lib/pq"
 )
 
@@ -27,12 +28,21 @@ type config struct{
 		rps float64 // requests per second
 		burst int // burst value
 		enabled bool // 
-	}		
+	}	
+	// add smtp related configs
+	smtp struct {
+		host 		string
+		port 		int
+		username 	string
+		password 	string
+		sender 		string
+		}	
 }
 type application struct{
 	config config
 	logger *jsonlog.Logger
 	models data.Models
+	mailer mailer.Mailer
 }
 func main(){
 	var cfg config
@@ -52,6 +62,13 @@ func main(){
 	flag.IntVar(&cfg.limiter.burst, "limiter-burst", 4, "Rate limiter maximum burst")
 	flag.BoolVar(&cfg.limiter.enabled, "limiter-enabled", true, "Enable rate limiter")
 
+	// command line flags for smtp settings from mailtrap
+
+	flag.StringVar(&cfg.smtp.host, "smtp-host", "smtp.mailtrap.io", "SMTP host")
+	flag.IntVar(&cfg.smtp.port, "smtp-port", 587, "SMTP port")
+	flag.StringVar(&cfg.smtp.username, "smtp-username", "8cac89e168c738", "SMTP username")
+	flag.StringVar(&cfg.smtp.password, "smtp-password", "cce1dcf8487a2d", "SMTP password")
+	flag.StringVar(&cfg.smtp.sender, "smtp-sender", "Greenlight <no-reply@greenlight.kellemnegasi.net>", "SMTP sender")
 	// parese the recieved values
 
 
@@ -71,6 +88,7 @@ func main(){
 		config: cfg,
 		logger:  logger,
 		models: data.NewModels(db),
+		mailer: mailer.New(cfg.smtp.host, cfg.smtp.port, cfg.smtp.username, cfg.smtp.password, cfg.smtp.sender),
 	}
 	// call the serve() method to startup the server.
 	err=app.serve()	
