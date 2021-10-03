@@ -67,13 +67,14 @@ func (m *Mailer) Send(recipient,templateFile string,data interface{}) error{
 	// if there is a time out, "dial tcp:i/o timeout" will be  returned
 
 	// on hindsight let's make the sender try 3 times before aborting
-	for i:=3;i<3;i++{
+
+	for i:=1;i<=3;i++{
 		err = m.dialer.DialAndSend(msg)
 		// if everythind is fine return nil
 		if err==nil{
 			return nil
 		}
-		// if didn't send try again after 500 millisecond i.e half a second
+		// if it didn't send try again after 500 millisecond i.e half a second
 		time.Sleep(500*time.Millisecond)
 	}
 	return err

@@ -65,7 +65,7 @@ func main(){
 	// command line flags for smtp settings from mailtrap
 
 	flag.StringVar(&cfg.smtp.host, "smtp-host", "smtp.mailtrap.io", "SMTP host")
-	flag.IntVar(&cfg.smtp.port, "smtp-port", 587, "SMTP port")
+	flag.IntVar(&cfg.smtp.port, "smtp-port", 2525, "SMTP port")
 	flag.StringVar(&cfg.smtp.username, "smtp-username", "8cac89e168c738", "SMTP username")
 	flag.StringVar(&cfg.smtp.password, "smtp-password", "cce1dcf8487a2d", "SMTP password")
 	flag.StringVar(&cfg.smtp.sender, "smtp-sender", "Greenlight <no-reply@greenlight.kellemnegasi.net>", "SMTP sender")

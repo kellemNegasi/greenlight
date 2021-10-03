@@ -56,14 +56,17 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	// send the email using the mailer package i.e calling the send method on the mailer object
-	err = app.mailer.Send(user.Email,"user_welcome.tmpl",user)
-	if err!=nil{
-		app.serveErrorResponse(w,r,err)
-		return
-	}
+	// to avoid overhead send the mail in a background own go routine
+	go func(){
+		err = app.mailer.Send(user.Email,"user_welcome.tmpl",user)
+		if err!=nil{
+			app.logger.PrintError(err,nil)// use this instead of app.ServeErrorResponse to avoid redudant response
+		}
+
+	}()
 
 
-	err = app.writeJSON(w,http.StatusCreated,envelope{"user":user},nil)
+	err = app.writeJSON(w,http.StatusAccepted,envelope{"user":user},nil)
 	if err!=nil{
 		app.serveErrorResponse(w,r,err)
 	}
