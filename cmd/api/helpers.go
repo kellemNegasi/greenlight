@@ -113,3 +113,14 @@ func (app *application) readInt(qs url.Values,key string,defaultValue int,v *val
 	return i
 }
 
+func (app *application) background(fn func()){
+	go func(){
+		// defered revory function
+		defer func(){
+			if err:=recover();err!=nil{
+				app.logger.PrintError(fmt.Errorf("%s", err), nil)
+			}
+		}()
+		fn()
+	}()
+}
