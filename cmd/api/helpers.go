@@ -114,6 +114,8 @@ func (app *application) readInt(qs url.Values,key string,defaultValue int,v *val
 }
 
 func (app *application) background(fn func()){
+	// increament wait group counter to signify a new go routine
+	app.wg.Add(1)
 	go func(){
 		// defered revory function
 		defer func(){
