@@ -79,3 +79,59 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		app.serveErrorResponse(w,r,err)
 	}
 }
+
+func (app *application) activateUserHandler(w http.ResponseWriter, r *http.Request){
+	var input struct{
+		TokenPlaintext string `json:"token"`
+	}
+
+	err:=app.readJSON(w,r,&input)
+	if err!=nil{
+		app.badRequestResponse(w,r,err)
+		return
+	}
+
+	v:= validator.New()
+	if data.ValidateTokenPlaintext(v,input.TokenPlaintext);!v.Valid(){
+		app.faildValidationResoponse(w,r,v.Errors)
+		return
+	}
+	// get the details of the user associated with token using the GetForToken() method
+	user,err := app.models.Users.GetForToken(data.ScopeActivation,input.TokenPlaintext)
+	if err!=nil{
+		switch{
+		case errors.Is(err,data.ErrRecordNotFound):
+			v.AddError("token","invalid or expired activation token")
+			app.faildValidationResoponse(w,r,v.Errors)
+		default:
+			app.serveErrorResponse(w,r,err)
+		}
+		return
+	}
+	// if that goes well then update the user's activation status
+	user.Activated = true
+	// then update the usre
+
+	err = app.models.Users.Update(user)
+	if err!=nil{
+		switch{
+		case errors.Is(err,data.ErrEditConfilict):
+			app.editConflictResponse(w,r,err)
+		default:
+			app.serveErrorResponse(w,r,err)
+		}
+		return
+	}
+	// if everything went succesfully ... the delete all activation tokens for the user
+	err = app.models.Tokens.DeleteAllForUser(data.ScopeActivation,user.ID)
+	if err!=nil{
+		app.serveErrorResponse(w,r,err)
+		return
+	}
+
+	// send the updated user details back to the client
+	err = app.writeJSON(w,http.StatusOK,envelope{"user":user},nil)
+	if err!=nil{
+		app.serveErrorResponse(w,r,err)
+	}
+}
