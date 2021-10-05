@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/kellemNegasi/greenlight/internal/data"
 	"github.com/kellemNegasi/greenlight/internal/validator"
@@ -54,12 +55,20 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		}
 		return 
 	}
-
+	// generate a new token for the user
+	token,err:= app.models.Tokens.New(user.ID,24*time.Hour,data.ScopeActivation)
 	// send the email using the mailer package i.e calling the send method on the mailer object
 	// to avoid overhead send the mail in a background own go routine
 
 	app.background(func() {
-		err = app.mailer.Send(user.Email,"user_welcome.tmpl",user)
+		// let's crate a new map to hold the data
+		data := map[string]interface{}{
+			"activationToken": token.Plaintext,
+			"userID":user.ID,
+			"userName":user.Name,
+		}
+
+		err = app.mailer.Send(user.Email,"user_welcome.tmpl",data)
 		if err!=nil{
 			app.logger.PrintError(err,nil)// use this instead of app.ServeErrorResponse to avoid redudant response
 		}

@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	scopeActivation = "activation"
+	ScopeActivation = "activation"
 )
 
 // create token struct to represent token type
