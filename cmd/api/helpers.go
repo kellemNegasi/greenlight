@@ -116,8 +116,14 @@ func (app *application) readInt(qs url.Values,key string,defaultValue int,v *val
 func (app *application) background(fn func()){
 	// increament wait group counter to signify a new go routine
 	app.wg.Add(1)
+	
 	go func(){
-		// defered revory function
+		// use the defere to decrement at the closing of each go routine, i.e just before the 
+		//  routine returns
+		defer app.wg.Done()
+
+		// defered panic recovery function
+
 		defer func(){
 			if err:=recover();err!=nil{
 				app.logger.PrintError(fmt.Errorf("%s", err), nil)

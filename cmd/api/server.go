@@ -29,8 +29,11 @@ func (app *application) serve() error{
 		// any other signals will not be caught by our channel and should retain theri original behaviour.
 		signal.Notify(quit,syscall.SIGINT,syscall.SIGTERM)
 		// read the signal from the channel.
-		// this code blockes until the signal is recieved
+		//------ N.B this code blockes until the signal is recieved------
 		s:= <-quit
+
+		//---------------------------------------------
+
 		// log the recieving of the signal 
 		app.logger.PrintInfo("shuting down server",map[string]string{
 			"signal":s.String(),
