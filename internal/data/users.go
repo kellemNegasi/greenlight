@@ -11,6 +11,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// create annonymous user variable
+var AnonymousUser = &User{}
 type UserModel struct{
 	DB *sql.DB
 }
@@ -32,6 +34,10 @@ var (
 type password struct{
 	plaintext *string // should be a pointer to distinguish between empty string and no string provided
 	hash 	  []byte
+}
+
+func (u *User) IsAnonymous()bool{
+	return u==AnonymousUser
 }
 
 func (p *password) Set(plaintTextPassword string) error{
