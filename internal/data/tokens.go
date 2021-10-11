@@ -12,17 +12,18 @@ import (
 )
 
 const (
-	ScopeActivation = "activation"
+	ScopeActivation = "activation" // activation scope
+	ScopeAuthentication = "authentication"// authentication scope
 )
 
 // create token struct to represent token type
 
 type Token struct {
-	Plaintext 	string
-	Hash		[]byte
-	UserID		int64
-	Expiry		time.Time
-	Scope		string
+	Plaintext 	string	 	`json:"token"`
+	Hash		[]byte		`json:"-"`
+	UserID		int64 		`json:"-"`
+	Expiry		time.Time	`json:"expiry"`
+	Scope		string		`json:"-"`
 }
 
 // token model for database interaction wrapper

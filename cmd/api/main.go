@@ -99,6 +99,8 @@ func main(){
 	}
 }
 
+// function to create DB connection 
+
 func openDB(cfg config) (*sql.DB,error){
 	db,err:=sql.Open("postgres",cfg.db.dsn)
 	if err!=nil{
