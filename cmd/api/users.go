@@ -55,6 +55,13 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		}
 		return 
 	}
+	//add the read permission by default 
+
+	err = app.models.Permissions.AddForUser(user.ID,"movies:read")
+	if err!=nil{
+		app.serveErrorResponse(w,r,err)
+		return
+	}
 	// generate a new token for the user
 	token,err:= app.models.Tokens.New(user.ID,24*time.Hour,data.ScopeActivation)
 	// send the email using the mailer package i.e calling the send method on the mailer object
