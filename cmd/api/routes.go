@@ -12,12 +12,14 @@ func (app *application) routs() http.Handler{
 	router.NotFound = http.HandlerFunc(app.notFoundResponse)
 	router.MethodNotAllowed =http.HandlerFunc(app.methodNotAllowedResoponse)
 	// movies related routes 
-	router.HandlerFunc(http.MethodGet,"/v1/movies",app.requiredActivatedUser(app.listMovieHandler))
-	router.HandlerFunc(http.MethodGet,"/v1/healthcheck",app.requiredActivatedUser(app.healthcheckHandler))
-	router.HandlerFunc(http.MethodPost,"/v1/movies",app.requiredActivatedUser(app.createMovieHandler))
-	router.HandlerFunc(http.MethodGet,"/v1/movies/:id",app.requiredActivatedUser(app.showMovieHandler))
-	router.HandlerFunc(http.MethodPatch,"/v1/movies/:id",app.requiredActivatedUser(app.updateMovieHandler))
-	router.HandlerFunc(http.MethodDelete,"/v1/movies/:id",app.requiredActivatedUser(app.deleteMovieHandler))
+	router.HandlerFunc(http.MethodGet,"/v1/healthcheck",app.healthcheckHandler)
+
+
+	router.HandlerFunc(http.MethodGet,"/v1/movies",app.requirePermission("movies:read",app.listMovieHandler))
+	router.HandlerFunc(http.MethodPost,"/v1/movies",app.requirePermission("movies:write",app.createMovieHandler))
+	router.HandlerFunc(http.MethodGet,"/v1/movies/:id",app.requirePermission("movies:read",app.showMovieHandler))
+	router.HandlerFunc(http.MethodPatch,"/v1/movies/:id",app.requirePermission("movies:write",app.updateMovieHandler))
+	router.HandlerFunc(http.MethodDelete,"/v1/movies/:id",app.requirePermission("movies:write",app.deleteMovieHandler))
 	// routes for user
 	router.HandlerFunc(http.MethodPost,"/v1/users",app.registerUserHandler)
 	router.HandlerFunc(http.MethodPut,"/v1/users/activated",app.activateUserHandler)
