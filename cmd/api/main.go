@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"database/sql"
+	"expvar"
 	"flag"
 	"os"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -96,7 +98,22 @@ func main(){
 
 	defer db.Close()
 	logger.PrintInfo("database connection pool established!",nil)
-	
+	// register a new "version" variable in the expvar handler containing the version
+	// number of the application
+	expvar.NewString("version").Set(version)
+	// publish the number go routines
+	expvar.Publish("goroutines",expvar.Func(func() interface{} {
+		return runtime.NumGoroutine()
+	}))
+	// publish the number of connectin pools
+	expvar.Publish("database",expvar.Func(func() interface{} {
+		return db.Stats()
+	}))
+	// publish the current unix timestamp to seconds precisioin
+	expvar.Publish("timestamp",expvar.Func(func() interface{} {
+		return time.Now().Unix()
+	}))
+	// initializa application
 	app:= &application{
 		config: cfg,
 		logger:  logger,
