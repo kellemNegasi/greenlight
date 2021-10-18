@@ -13,77 +13,78 @@ import (
 
 // create annonymous user variable
 var AnonymousUser = &User{}
-type UserModel struct{
+
+type UserModel struct {
 	DB *sql.DB
 }
 
-type User struct{
-	ID 		  	 int64		 `json:"id"`
-	CreatedAt	 time.Time	 `json:"created_at"` 
-	Name 		 string		 `json:"name"`
-	Email	 	 string  	 `json:"email"`
-	Password	 password  	 `json:"-"`
-	Activated	 bool		 `json:"activated"`
-	Version 	 int  		 `json:"-"`
-
+type User struct {
+	ID        int64     `json:"id"`
+	CreatedAt time.Time `json:"created_at"`
+	Name      string    `json:"name"`
+	Email     string    `json:"email"`
+	Password  password  `json:"-"`
+	Activated bool      `json:"activated"`
+	Version   int       `json:"-"`
 }
+
 var (
 	ErrDuplicateEmail = errors.New("duplicate email")
 )
 
-type password struct{
+type password struct {
 	plaintext *string // should be a pointer to distinguish between empty string and no string provided
-	hash 	  []byte
+	hash      []byte
 }
 
-func (u *User) IsAnonymous()bool{
-	return u==AnonymousUser
+func (u *User) IsAnonymous() bool {
+	return u == AnonymousUser
 }
 
-func (p *password) Set(plaintTextPassword string) error{
-	hash,err := bcrypt.GenerateFromPassword([]byte(plaintTextPassword),12)
-	if err!=nil{
+func (p *password) Set(plaintTextPassword string) error {
+	hash, err := bcrypt.GenerateFromPassword([]byte(plaintTextPassword), 12)
+	if err != nil {
 		return err
 	}
 	p.plaintext = &plaintTextPassword
 	p.hash = hash
-	return  nil
+	return nil
 }
 
-func (p *password) Matches(plaintTextPassword string) (bool,error){
-	err:=bcrypt.CompareHashAndPassword(p.hash,[]byte(plaintTextPassword))
-	if err!=nil{
-		switch{
-		case errors.Is(err,bcrypt.ErrMismatchedHashAndPassword):
-			return false,nil
+func (p *password) Matches(plaintTextPassword string) (bool, error) {
+	err := bcrypt.CompareHashAndPassword(p.hash, []byte(plaintTextPassword))
+	if err != nil {
+		switch {
+		case errors.Is(err, bcrypt.ErrMismatchedHashAndPassword):
+			return false, nil
 		default:
-			return false,err
+			return false, err
 		}
 	}
-	return true,nil
+	return true, nil
 }
 
-func ValidateEmail(v *validator.Validator,email string){
-	v.Check(email!="","email","must be provided")
-	v.Check(validator.Matches(email,validator.EmailRX),"email","must be a valid email addres")
+func ValidateEmail(v *validator.Validator, email string) {
+	v.Check(email != "", "email", "must be provided")
+	v.Check(validator.Matches(email, validator.EmailRX), "email", "must be a valid email addres")
 }
-func ValidatePasswordPlaintext(v *validator.Validator,password string){
-	v.Check(password!="","password","must be provided")
-	v.Check(len(password)>=8,"password","must be at least 8 bytes long")
-	v.Check(len(password)<=72,"passowrd","must not be more than 72 bytes long")
+func ValidatePasswordPlaintext(v *validator.Validator, password string) {
+	v.Check(password != "", "password", "must be provided")
+	v.Check(len(password) >= 8, "password", "must be at least 8 bytes long")
+	v.Check(len(password) <= 72, "passowrd", "must not be more than 72 bytes long")
 }
 
-func ValidateUser( v *validator.Validator, user *User){
-	v.Check(user.Name!= "","name","must be given")
-	v.Check(len(user.Name)<=500,"name","must be less thatn 500 bytes")
-	
+func ValidateUser(v *validator.Validator, user *User) {
+	v.Check(user.Name != "", "name", "must be given")
+	v.Check(len(user.Name) <= 500, "name", "must be less thatn 500 bytes")
+
 	// check the email here
-	ValidateEmail(v,user.Email)
-	if user.Password.plaintext!=nil{
-		ValidatePasswordPlaintext(v,*user.Password.plaintext)
+	ValidateEmail(v, user.Email)
+	if user.Password.plaintext != nil {
+		ValidatePasswordPlaintext(v, *user.Password.plaintext)
 	}
 	// let's do some sanity check if hash is empty due to some logic mistake
-	if user.Password.hash==nil{
+	if user.Password.hash == nil {
 		panic("password hash is empty for some reason")
 	}
 
@@ -95,13 +96,13 @@ func (m UserModel) Insert(user *User) error {
 			  VALUES ($1, $2, $3, $4)
 			  RETURNING id, created_at, version`
 
-	args :=[]interface{}{user.Name,user.Email,user.Password.hash,user.Activated}
-	ctx,cancel := context.WithTimeout(context.Background(),3*time.Second)
+	args := []interface{}{user.Name, user.Email, user.Password.hash, user.Activated}
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-	err := m.DB.QueryRowContext(ctx,query,args...).Scan(&user.ID,&user.CreatedAt,&user.Version)
-	if err!=nil{
-		switch{
-		case err.Error()==`pq: duplicate key value violates unique constraint "users_email_key"`:
+	err := m.DB.QueryRowContext(ctx, query, args...).Scan(&user.ID, &user.CreatedAt, &user.Version)
+	if err != nil {
+		switch {
+		case err.Error() == `pq: duplicate key value violates unique constraint "users_email_key"`:
 			return ErrDuplicateEmail
 		default:
 			return err
@@ -110,14 +111,14 @@ func (m UserModel) Insert(user *User) error {
 	return nil
 }
 
-func (m UserModel) GetByEmail(email string) (*User,error){
-	query:=`SELECT id, created_at, name, email, password_hash, activated, version
+func (m UserModel) GetByEmail(email string) (*User, error) {
+	query := `SELECT id, created_at, name, email, password_hash, activated, version
 			FROM users
 			WHERE email = $1`
-	var user User 
-	ctx,cancel := context.WithTimeout(context.Background(),3*time.Second)
+	var user User
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-	err := m.DB.QueryRowContext(ctx,query,email).Scan(
+	err := m.DB.QueryRowContext(ctx, query, email).Scan(
 		&user.ID,
 		&user.CreatedAt,
 		&user.Name,
@@ -126,19 +127,19 @@ func (m UserModel) GetByEmail(email string) (*User,error){
 		&user.Activated,
 		&user.Version,
 	)
-	if err!=nil{
-		switch{
-		case errors.Is(err,sql.ErrNoRows):
-			return nil,ErrRecordNotFound
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrRecordNotFound
 		default:
-			return nil,err
+			return nil, err
 		}
 	}
-	return &user,nil
+	return &user, nil
 
 }
 
-func(m *UserModel) Update(user *User) error{
+func (m *UserModel) Update(user *User) error {
 	query := `UPDATE users 
 	SET name = $1, email = $2, password_hash = $3, activated = $4, version = version + 1
 	WHERE id = $5 AND version = $6
@@ -149,16 +150,16 @@ func(m *UserModel) Update(user *User) error{
 		user.Password.hash,
 		user.Activated,
 		user.ID,
-		user.Version,	
+		user.Version,
 	}
-	ctx,cancel := context.WithTimeout(context.Background(),3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-	err := m.DB.QueryRowContext(ctx,query,args...).Scan(&user.Version)
-	if err != nil{
-		switch{
-		case err.Error()==`pq: duplicate key value violates unique constraint "users_email_key"`:
+	err := m.DB.QueryRowContext(ctx, query, args...).Scan(&user.Version)
+	if err != nil {
+		switch {
+		case err.Error() == `pq: duplicate key value violates unique constraint "users_email_key"`:
 			return ErrDuplicateEmail
-		case errors.Is(err,sql.ErrNoRows):
+		case errors.Is(err, sql.ErrNoRows):
 			return ErrEditConfilict
 		default:
 			return err
@@ -167,8 +168,8 @@ func(m *UserModel) Update(user *User) error{
 	return nil
 }
 
-func (m UserModel) GetForToken(tokenScop,tokenPlaintext string)(*User,error){
-	tokenHash:= sha256.Sum256([]byte(tokenPlaintext))
+func (m UserModel) GetForToken(tokenScop, tokenPlaintext string) (*User, error) {
+	tokenHash := sha256.Sum256([]byte(tokenPlaintext))
 	// set up the sql query
 	query := `
 		SELECT users.id, users.created_at, users.name, users.email, users.password_hash, users.activated, users.version
@@ -178,12 +179,12 @@ func (m UserModel) GetForToken(tokenScop,tokenPlaintext string)(*User,error){
 		WHERE tokens.hash = $1
 		AND tokens.scope = $2
 		AND tokens.expiry > $3`
-	args := []interface{}{tokenHash[:],tokenScop,time.Now()}
+	args := []interface{}{tokenHash[:], tokenScop, time.Now()}
 
 	var user User
-	ctx,cancel := context.WithTimeout(context.Background(),3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-	err:= m.DB.QueryRowContext(ctx,query,args...).Scan(
+	err := m.DB.QueryRowContext(ctx, query, args...).Scan(
 		&user.ID,
 		&user.CreatedAt,
 		&user.Name,
@@ -192,14 +193,14 @@ func (m UserModel) GetForToken(tokenScop,tokenPlaintext string)(*User,error){
 		&user.Activated,
 		&user.Version,
 	)
-	if err!= nil{
-		switch{
-		case errors.Is(err,sql.ErrNoRows):
-			return nil,ErrRecordNotFound
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrRecordNotFound
 		default:
-			return nil,err
+			return nil, err
 		}
 	}
 
-	return &user,nil
+	return &user, nil
 }

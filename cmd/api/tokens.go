@@ -9,62 +9,61 @@ import (
 	"github.com/kellemNegasi/greenlight/internal/validator"
 )
 
+func (app *application) createAuthenticationTokenHandler(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
 
-func(app *application) createAuthenticationTokenHandler(w http.ResponseWriter, r *http.Request){
-		var input struct{
-			Email string `json:"email"`
-			Password string `json:"password"`
-		}
+	err := app.readJSON(w, r, &input)
+	if err != nil {
+		app.serveErrorResponse(w, r, err)
+		return
+	}
 
-		err:=app.readJSON(w,r,&input)
-		if err!=nil{
-			app.serveErrorResponse(w,r,err)
-			return 
-		}
+	v := validator.New()
+	data.ValidateEmail(v, input.Email)
+	data.ValidatePasswordPlaintext(v, input.Password)
+	if !v.Valid() {
+		app.faildValidationResoponse(w, r, v.Errors)
+		return
+	}
 
-		v:= validator.New()
-		data.ValidateEmail(v,input.Email)
-		data.ValidatePasswordPlaintext(v,input.Password)
-		if !v.Valid(){
-			app.faildValidationResoponse(w,r,v.Errors)
-			return
-		}
-
-		// if the validation passes
-		// then look up the user based on the email if user doesn't exist 
-		// invalidCredentialResponse should be sent 
-	user,err := app.models.Users.GetByEmail(input.Email)
-	if err!=nil{
-		switch{
-		case errors.Is(err,data.ErrRecordNotFound):
-			app.invalidCredentialsResponse(w,r)
+	// if the validation passes
+	// then look up the user based on the email if user doesn't exist
+	// invalidCredentialResponse should be sent
+	user, err := app.models.Users.GetByEmail(input.Email)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.invalidCredentialsResponse(w, r)
 		default:
-			app.serveErrorResponse(w,r,err)
-		
+			app.serveErrorResponse(w, r, err)
+
 		}
 		return
 	}
 	// if user is found then match the password
-	match,err := user.Password.Matches(input.Password)
-	if err!=nil{
-		app.serveErrorResponse(w,r,err)
+	match, err := user.Password.Matches(input.Password)
+	if err != nil {
+		app.serveErrorResponse(w, r, err)
 		return
 	}
-	if !match{
-		app.invalidCredentialsResponse(w,r)
+	if !match {
+		app.invalidCredentialsResponse(w, r)
 		return
 	}
 	// otherwise if the password matches generate a new token for 24hrs and scope authentication
-	token,err := app.models.Tokens.New(user.ID,24*time.Hour,data.ScopeAuthentication)
-	if err!=nil{
-		app.serveErrorResponse(w,r,err)
+	token, err := app.models.Tokens.New(user.ID, 24*time.Hour, data.ScopeAuthentication)
+	if err != nil {
+		app.serveErrorResponse(w, r, err)
 		return
 	}
 
 	// if that goes well send the token as json
-	err = app.writeJSON(w,http.StatusCreated,envelope{"authentication_token":token},nil)
-	if err!=nil{
-		app.serveErrorResponse(w,r,err)
+	err = app.writeJSON(w, http.StatusCreated, envelope{"authentication_token": token}, nil)
+	if err != nil {
+		app.serveErrorResponse(w, r, err)
 		return
 	}
 

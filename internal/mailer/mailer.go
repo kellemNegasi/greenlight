@@ -13,45 +13,45 @@ import (
 
 var templateFs embed.FS
 
-// define mailer struct 
-type Mailer struct{
-	dialer *mail.Dialer 			// used to connect to an smtp servr
-	sender string 				// contains sender inforamtions 
+// define mailer struct
+type Mailer struct {
+	dialer *mail.Dialer // used to connect to an smtp servr
+	sender string       // contains sender inforamtions
 
 }
 
-func New(host string, port int,username,password,sender string) Mailer{
-	dialer := mail.NewDialer(host,port,username,password)
-	dialer.Timeout = 5*time.Second
+func New(host string, port int, username, password, sender string) Mailer {
+	dialer := mail.NewDialer(host, port, username, password)
+	dialer.Timeout = 5 * time.Second
 	return Mailer{
 		dialer: dialer,
 		sender: sender,
 	}
 }
 
-func (m *Mailer) Send(recipient,templateFile string,data interface{}) error{
-	tmpl,err :=template.New("email").ParseFS(templateFs,"templates/"+templateFile)
-	if err!=nil{
+func (m *Mailer) Send(recipient, templateFile string, data interface{}) error {
+	tmpl, err := template.New("email").ParseFS(templateFs, "templates/"+templateFile)
+	if err != nil {
 		return err
 	}
-	// execute the named template subject passing the dynamic datea and storing it 
+	// execute the named template subject passing the dynamic datea and storing it
 	// in the subject buffer
-	subject:= new(bytes.Buffer)
-	err = tmpl.ExecuteTemplate(subject,"subject",data)
-	if err!=nil{
+	subject := new(bytes.Buffer)
+	err = tmpl.ExecuteTemplate(subject, "subject", data)
+	if err != nil {
 		return err
 	}
 	// do the same for the named plain body template
-	plainBody :=new(bytes.Buffer)
-	err = tmpl.ExecuteTemplate(plainBody,"plainBody",data)
-	if err!=nil{
+	plainBody := new(bytes.Buffer)
+	err = tmpl.ExecuteTemplate(plainBody, "plainBody", data)
+	if err != nil {
 		return err
 	}
 
 	// and follow the same pattern for the "htmlBody" template inside the template file
 	htmlBody := new(bytes.Buffer)
-	err = tmpl.ExecuteTemplate(htmlBody,"htmlBody",data)
-	if err!=nil{
+	err = tmpl.ExecuteTemplate(htmlBody, "htmlBody", data)
+	if err != nil {
 		return err
 	}
 
@@ -68,18 +68,14 @@ func (m *Mailer) Send(recipient,templateFile string,data interface{}) error{
 
 	// on hindsight let's make the sender try 3 times before aborting
 
-	for i:=1;i<=3;i++{
+	for i := 1; i <= 3; i++ {
 		err = m.dialer.DialAndSend(msg)
 		// if everythind is fine return nil
-		if err==nil{
+		if err == nil {
 			return nil
 		}
 		// if it didn't send try again after 500 millisecond i.e half a second
-		time.Sleep(500*time.Millisecond)
+		time.Sleep(500 * time.Millisecond)
 	}
 	return err
 }
-
-
-
-
