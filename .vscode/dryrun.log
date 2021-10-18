@@ -1,0 +1,5 @@
+make: Entering directory '/home/kellem/Documents/go-projects/greenlight'
+echo 'Usage: '
+sed -n 's/^##//p'  Makefile .envrc | column -t -s ':' | sed -e 's/^/ /'
+make: Leaving directory '/home/kellem/Documents/go-projects/greenlight'
+ 
