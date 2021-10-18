@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"expvar"
 	"flag"
+	"fmt"
 	"os"
 	"runtime"
 	"strings"
@@ -18,7 +19,7 @@ import (
 )
 
 const version = "1.0.0"
-
+var buildTime string
 type config struct {
 	port int
 	env  string
@@ -86,9 +87,18 @@ func main() {
 		return nil
 	})
 
+	displayVersion := flag.Bool("version",false,"Display version and exit")
+
+
 	// parese the recieved values
 
 	flag.Parse()
+
+	if *displayVersion{
+		fmt.Printf("version:\t%s\n",version)
+		fmt.Printf("build time:\t%s\n",buildTime)
+		os.Exit(0)
+	}
 	// logger:= log.New(os.Stdout,"",log.Ldate|log.Ltime)
 	logger := jsonlog.New(os.Stdout, jsonlog.LevelInfo)
 	db, err := openDB(cfg)
