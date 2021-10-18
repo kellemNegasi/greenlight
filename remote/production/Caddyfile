@@ -1,0 +1,8 @@
+{
+email kellemnegasi@gmail.com
+}
+
+167.71.254.102 {
+    respond /v1/metrics/* "Not Permitted" 403
+    reverse_proxy localhost:4000
+}
