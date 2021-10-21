@@ -141,3 +141,62 @@ func (app *application) activateUserHandler(w http.ResponseWriter, r *http.Reque
 		app.serveErrorResponse(w, r, err)
 	}
 }
+
+func (app *application) updateUserPasswordHandler(w http.ResponseWriter,r *http.Request){
+	var input struct{
+		Password string `json:"password"`
+		TokenPlaintext string `json:"token"`
+	}
+	err:= app.readJSON(w,r,&input)
+	if err!=nil{
+		app.badRequestResponse(w,r,err)
+		return
+	}
+	// validate the password and the token
+	v:= validator.New()
+	data.ValidatePasswordPlaintext(v,input.Password)
+	data.ValidateTokenPlaintext(v,input.TokenPlaintext)
+	if !v.Valid(){
+		app.faildValidationResoponse(w,r,v.Errors)
+		return
+	}
+
+	// if it is valid then retrieve the corrosponding user
+	user,err := app.models.Users.GetForToken(data.ScopePasswordReset,input.TokenPlaintext)
+	if err!=nil{
+		switch{
+		case errors.Is(err,data.ErrRecordNotFound):
+			v.AddError("token","invalid or expired reset token")
+			app.faildValidationResoponse(w,r,v.Errors)
+		default:
+			app.serveErrorResponse(w,r,err)
+		}
+		return
+	}
+	// if the user exists which means the token is valid, update the password for the user
+	err = user.Password.Set(input.Password)
+	if err!=nil{
+		app.serveErrorResponse(w,r,err)
+		return
+	}
+
+	// then save the update user, i.e with reset password in database
+	err = app.models.Users.Update(user)
+	if err!=nil{
+		switch{
+		case errors.Is(err,data.ErrEditConfilict):
+			app.editConflictResponse(w,r,err)
+		default:
+			app.serveErrorResponse(w,r,err)
+		}
+		return 
+	}
+	// if that goes well then send a confirmatin message to the user
+	env := envelope{"message":"your password was successfully reset"}
+	err = app.writeJSON(w,http.StatusOK,env,nil)
+	if err !=nil{
+		app.serveErrorResponse(w,r,err)
+		return
+	}
+
+}
