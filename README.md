@@ -174,8 +174,9 @@ $ curl -k -d '{"email":"user1@example.com", "password": "pa55wordtest"}' -X POST
 ##### Get access of the movies the database
 * ###### Get details of all movies
    *Request*
-   
-``` json
+
+
+``` console
 $ curl -k -H "Authorization: Bearer ZNKKSMRBXEZGL3GZ3EKUOXG3JI" https://167.71.254.102/v1/movies
 
 ```
@@ -549,11 +550,11 @@ $ curl -k -H "Authorization: Bearer ZNKKSMRBXEZGL3GZ3EKUOXG3JI" 'https://167.71.
 
 ```
 
- ###### Get a paginated response
+ ###### Get a paginated lists
 
    *Request*
 
-``` json
+``` console
 $ curl -k -H "Authorization: Bearer ZNKKSMRBXEZGL3GZ3EKUOXG3JI" 'https://167.71.254.102/v1/movies?page_size=5&page=3' 
 ```
    *Response*
@@ -629,12 +630,12 @@ $ curl -k -H "Authorization: Bearer ZNKKSMRBXEZGL3GZ3EKUOXG3JI" 'https://167.71.
 
 ```
 
-###### Get a sorted list of movies
+###### Get a sorted lists
 
 Lets get some movies sorted by title in descending order
 
    *Request*
-``` json
+``` console
 
 curl -k -H "Authorization: Bearer ZNKKSMRBXEZGL3GZ3EKUOXG3JI" 'https://167.71.254.102/v1/movies?page_size=3&page=5&sort=-title'
 
@@ -700,4 +701,129 @@ For example the user identified by "user1@example.com" has only "read" permissio
 ![db info](screenshot1.png)
 
 To do write operations on the movies table, one should be signed in as admin@greenlight.com
+
+Let's just do that right now.
+
+###### Get authenticated as admin@greenlight
+
+   *Request*
+```console 
+$ curl -k -d '{"email": "admin@greenlight.com", "password": "fakepasswordhere"}' -X POST 'https://167.71.254.102/v1/tokens/authentication'
+```
+   *Response*
+
+   ``` json
+   {
+	"authentication_token": {
+		"token": "H4NURVCDHKKEOHIRJA3TEIAV34",
+		"expiry": "2021-10-28T08:41:28.068293831-04:00"
+	}
+}
+   ```
+Now let's ADD, Update and DELETE a movie using the authentication token of the admin user.
+
+4. Add a new movie 
+
+  *Request*
+
+``` console
+$ BODY='{"title": "The Deer Hunter","year": 1978,"runtime": "183 mins","genres": ["War"]}'
+```
+
+
+``` console
+$ curl -k -H "Authorization: Bearer H4NURVCDHKKEOHIRJA3TEIAV34" -d "$BODY" -X POST 'https://167.71.254.102/v1/movies'
+```
+
+ *Response*
+
+ ``` json
+ {
+	"movie": {
+		"id": 25,
+		"title": "The Deer Hunter",
+		"year": 1978,
+		"runtime": "183 mins",
+		"genres": [
+			"War"
+		],
+		"version": 1
+	}
+}
+
+ ```
+
+ The new movie has been succesfully added.
+
+ Now let's update the genres field 
+
+ 5. Updating a movie
+
+ 
+
+add "Darama" to the genres array and update the movie 
+
+ *Request*
+
+ ``` console
+$ curl -k -H "Authorization: Bearer H4NURVCDHKKEOHIRJA3TEIAV34" -d '{"genres": ["War","Drama"]}' -X PATCH 'https://167.71.254.102/v1/movies/25'
+ ```
+*Response*
+
+``` json
+{
+	"movie": {
+		"id": 25,
+		"title": "The Deer Hunter",
+		"year": 1978,
+		"runtime": "183 mins",
+		"genres": [
+			"War",
+			"Drama"
+		],
+		"version": 2
+	}
+}
+```
+Notice the "version" field of the movie object. It shows the number of edits or updates made.
+6. Delete a Movie by id
+
+Let's delete the last added movie 
+
+ *Request*
+
+ ``` console
+ $ curl -k -H "Authorization: Bearer H4NURVCDHKKEOHIRJA3TEIAV34" -X DELETE 'https://167.71.254.102/v1/movies/25'
+ ```
+
+ *Response*
+
+ ``` json
+
+ {
+	"message": "movie successfully deleted"
+}
+```
+Let's try accessing the movie
+
+ *Request*
+
+ ``` console
+ curl -k -H "Authorization: Bearer H4NURVCDHKKEOHIRJA3TEIAV34" -X GET 'https://167.71.254.102/v1/movies/25'
+ ```
+
+  *Response*
+
+ ``` json
+ 
+ {
+	"error": "the requested resource could not be found"
+}
+
+ ```
+
+ This tells us the movie has been deleted.
+
+
+
 
