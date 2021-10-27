@@ -21,9 +21,10 @@ No |Method        | URL Pattern     |Action
   9 |POST          | /v1/tokens/authentication| generates new authenticatin token
   10|/v1/metrics   | /v1/metrics | Displays the application runtime metrics
 
-  Step by step demonstration and usage of each end point is shown  as bellow
+  ##### Step by step demonstration and usage of each end point is shown  bellow
 
- 1. Display system ifo and application status
+
+ 1. ##### Display system ifo and application status
 
  To get the system info of the application status, just make a GET request to the 
  ``` console
@@ -47,7 +48,7 @@ $ curl -k https://167.71.254.102/v1/healthcheck
 ```
 The -k parameter here is used to allow insecure server connections when using SSL.
 
-2. Get the details of all movies
+2. ##### Get the details of all movies
 
 ###### Request
 
@@ -64,7 +65,7 @@ This is becuase only an authenticated can access the details of the movies.
 
 To access this endpoint let's first register a test.
 
-3. Register a user
+3. ##### Register a user
 
 ###### Request
 ``` console 
@@ -99,7 +100,7 @@ content-length: 146
 }
 ```
 
-3. Activating the registered user
+3. ##### Activating the registered user
 Since the application is setup with SMTP credentials for my Mailtrap inbox, an activation email will be sent to the registered users email as follows.
 
 ------------------------------
@@ -151,7 +152,7 @@ content-length: 145
 ```
 As we can see it in the response json the user has been activated succesfully. Now let's get authenticated as this user and then we can access the details of all the movies or a specific a movie.
 
-4. Authenticating the user
+4. ##### Authenticating the user
 
 ###### Request
 
@@ -720,9 +721,9 @@ $ curl -k -d '{"email": "admin@greenlight.com", "password": "fakepasswordhere"}'
 	}
 }
    ```
-Now let's ADD, Update and DELETE a movie using the authentication token of the admin user.
+Now let's Add, Update and Delete a movie using the authentication token of the admin user.
 
-4. Add a new movie 
+4. ##### Add a new movie 
 
   *Request*
 
@@ -757,7 +758,7 @@ $ curl -k -H "Authorization: Bearer H4NURVCDHKKEOHIRJA3TEIAV34" -d "$BODY" -X PO
 
  Now let's update the genres field 
 
- 5. Updating a movie
+ 5. ##### Updating a movie
 
  
 
@@ -786,7 +787,8 @@ $ curl -k -H "Authorization: Bearer H4NURVCDHKKEOHIRJA3TEIAV34" -d '{"genres": [
 }
 ```
 Notice the "version" field of the movie object. It shows the number of edits or updates made.
-6. Delete a Movie by id
+
+6. ##### Delete a Movie by id
 
 Let's delete the last added movie 
 
