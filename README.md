@@ -546,13 +546,15 @@ $ curl -k -H "Authorization: Bearer ZNKKSMRBXEZGL3GZ3EKUOXG3JI" 'https://167.71.
 		}
 	]
 }
+
 ```
 
  ###### Get a paginated response
 
-     *Request*
+   *Request*
+
 ``` json
-$ curl -k -H "Authorization: Bearer ZNKKSMRBXEZGL3GZ3EKUOXG3JI" 'https://167.71.254.102/v1/movies?page_size=5&page=3'
+$ curl -k -H "Authorization: Bearer ZNKKSMRBXEZGL3GZ3EKUOXG3JI" 'https://167.71.254.102/v1/movies?page_size=5&page=3' 
 ```
    *Response*
 ``` json
@@ -626,3 +628,76 @@ $ curl -k -H "Authorization: Bearer ZNKKSMRBXEZGL3GZ3EKUOXG3JI" 'https://167.71.
 }
 
 ```
+
+###### Get a sorted list of movies
+
+Lets get some movies sorted by title in descending order
+
+   *Request*
+``` json
+
+curl -k -H "Authorization: Bearer ZNKKSMRBXEZGL3GZ3EKUOXG3JI" 'https://167.71.254.102/v1/movies?page_size=3&page=5&sort=-title'
+
+```
+
+   *Response*
+``` json
+{
+	"metadata": {
+		"current_page": 5,
+		"page_size": 3,
+		"first_page": 1,
+		"last_page": 8,
+		"total_records": 24
+	},
+	"movies": [
+		{
+			"id": 14,
+			"title": "No Country for Old Men",
+			"year": 2007,
+			"runtime": "122 mins",
+			"genres": [
+				"Crime",
+				"Drama",
+				"Thriller"
+			],
+			"version": 1
+		},
+		{
+			"id": 1,
+			"title": "Moana",
+			"year": 2016,
+			"runtime": "107 mins",
+			"genres": [
+				"animation",
+				"adventure"
+			],
+			"version": 1
+		},
+		{
+			"id": 10,
+			"title": "Memento",
+			"year": 2000,
+			"runtime": "113 mins",
+			"genres": [
+				"Mystery",
+				"Thriller"
+			],
+			"version": 1
+		}
+	]
+}
+
+```
+
+Adding and updating a movie item needs a user with a  write and read permisions. By default any registered and activated user has a read permission. However for a user to have a write permission it must be granted by the database admin.
+
+
+
+
+For example the user identified by "user1@example.com" has only "read" permission as seen bellow.
+
+![db info](screenshot1.png)
+
+To do write operations on the movies table, one should be signed in as admin@greenlight.com
+
